@@ -1,0 +1,21 @@
+# interview-assistant bağımlılıkları
+# Kurulum: pip install -r requirements.txt
+
+# Web framework + WebSocket desteği
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+websockets==14.1
+
+# Ses yakalama ve işleme
+PyAudio==0.2.14
+webrtcvad==2.0.10
+
+# API istemcileri
+openai==1.58.1
+anthropic==0.42.0
+
+# Ortam değişkenleri yönetimi
+python-dotenv==1.0.1
+
+# Yardımcı
+aiofiles==24.1.0

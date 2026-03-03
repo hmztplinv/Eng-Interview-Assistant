@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Assistant</title>
+<style>
+  /* ─── CSS Değişkenleri ─────────────────────────────── */
+  :root {
+    --bg-primary: rgba(12, 12, 18, 0.92);
+    --bg-secondary: rgba(22, 22, 32, 0.85);
+    --bg-card: rgba(30, 30, 44, 0.75);
+    --bg-input: rgba(40, 40, 56, 0.6);
+    --border-color: rgba(80, 80, 120, 0.25);
+    --border-active: rgba(100, 180, 255, 0.4);
+    --text-primary: #e8e8f0;
+    --text-secondary: #9898b0;
+    --text-dim: #606078;
+    --accent-blue: #5b9cf5;
+    --accent-green: #4ecf8b;
+    --accent-amber: #f0b84d;
+    --accent-red: #f06060;
+    --accent-purple: #a78bfa;
+    --font-mono: 'Consolas', 'SF Mono', 'Fira Code', monospace;
+    --font-sans: 'Segoe UI', -apple-system, sans-serif;
+    --radius: 8px;
+    --transition: 0.2s ease;
+  }
+
+  /* ─── Reset & Base ─────────────────────────────────── */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ─── Uygulama Container ───────────────────────────── */
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 12px;
+    gap: 10px;
+  }
+
+  /* ─── Header ───────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    flex-shrink: 0;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--accent-blue);
+  }
+
+  .profile-info {
+    font-size: 11px;
+    color: var(--text-secondary);
+    border-left: 1px solid var(--border-color);
+    padding-left: 10px;
+  }
+
+  .profile-info .company {
+    color: var(--accent-purple);
+    font-weight: 600;
+  }
+
+  /* ─── Durum Göstergesi ─────────────────────────────── */
+  /* ─── Download Butonu ────────────────────────────── */
+  .btn-download {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .btn-download:hover {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+    background: rgba(78, 207, 139, 0.08);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    transition: all var(--transition);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    transition: all var(--transition);
+  }
+
+  .status-connecting .status-dot {
+    background: var(--accent-amber);
+    animation: pulse 1.5s infinite;
+  }
+  .status-connecting { color: var(--accent-amber); background: rgba(240, 184, 77, 0.1); }
+
+  .status-listening .status-dot {
+    background: var(--accent-green);
+    animation: pulse 2s infinite;
+  }
+  .status-listening { color: var(--accent-green); background: rgba(78, 207, 139, 0.1); }
+
+  .status-processing .status-dot {
+    background: var(--accent-blue);
+    animation: pulse 0.8s infinite;
+  }
+  .status-processing { color: var(--accent-blue); background: rgba(91, 156, 245, 0.15); }
+
+  .status-error .status-dot {
+    background: var(--accent-red);
+  }
+  .status-error { color: var(--accent-red); background: rgba(240, 96, 96, 0.1); }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  /* ─── Ana İçerik ───────────────────────────────────── */
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ─── Transkript Paneli ────────────────────────────── */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .panel-title .icon {
+    font-size: 13px;
+  }
+
+  .panel-clear {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all var(--transition);
+  }
+
+  .panel-clear:hover {
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.05);
+  }
+
+  .transcript-panel {
+    flex: 0 0 auto;
+    max-height: 30vh;
+  }
+
+  .transcript-panel .panel-body {
+    padding: 10px 12px;
+    overflow-y: auto;
+    max-height: calc(30vh - 36px);
+    scroll-behavior: smooth;
+  }
+
+  /* ─── Cevap Paneli ─────────────────────────────────── */
+  .response-panel {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .response-panel .panel-header {
+    border-bottom-color: rgba(91, 156, 245, 0.2);
+  }
+
+  .response-panel .panel-title {
+    color: var(--accent-blue);
+  }
+
+  .response-panel .panel-body {
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  /* ─── Mesaj Balonları ──────────────────────────────── */
+  .message {
+    margin-bottom: 8px;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .message-time {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 3px;
+    font-family: var(--font-mono);
+  }
+
+  .message-text {
+    font-size: 13.5px;
+    line-height: 1.55;
+    word-wrap: break-word;
+  }
+
+  .message-transcript .message-text {
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 2px solid var(--accent-amber);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .message-response .message-text {
+    color: var(--text-primary);
+    padding: 10px 12px;
+    background: rgba(91, 156, 245, 0.06);
+    border-left: 2px solid var(--accent-blue);
+    border-radius: 0 6px 6px 0;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .message-response.latest .message-text {
+    background: rgba(91, 156, 245, 0.1);
+    border-left-width: 3px;
+  }
+
+  /* ─── Placeholder ──────────────────────────────────── */
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 12px;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .placeholder .icon {
+    font-size: 24px;
+    opacity: 0.4;
+  }
+
+  /* ─── İşleniyor Animasyonu ─────────────────────────── */
+  .processing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    color: var(--accent-blue);
+    font-size: 12px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .processing-dots {
+    display: flex;
+    gap: 3px;
+  }
+
+  .processing-dots span {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent-blue);
+    animation: dotPulse 1.2s infinite;
+  }
+
+  .processing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .processing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotPulse {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── Manuel Input ─────────────────────────────────── */
+  .input-area {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    flex-shrink: 0;
+  }
+
+  .input-area input {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: var(--font-sans);
+    outline: none;
+    transition: border-color var(--transition);
+  }
+
+  .input-area input:focus {
+    border-color: var(--border-active);
+  }
+
+  .input-area input::placeholder {
+    color: var(--text-dim);
+  }
+
+  .btn-send {
+    background: var(--accent-blue);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+  }
+
+  .btn-send:hover {
+    background: #4a8be0;
+    transform: translateY(-1px);
+  }
+
+  .btn-send:active {
+    transform: translateY(0);
+  }
+
+  .btn-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ─── Scrollbar ────────────────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* ─── Copy butonu ──────────────────────────────────── */
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-dim);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all var(--transition);
+    margin-top: 4px;
+    float: right;
+  }
+
+  .copy-btn:hover {
+    color: var(--text-secondary);
+    border-color: var(--text-dim);
+    background: rgba(255,255,255,0.03);
+  }
+
+  .copy-btn.copied {
+    color: var(--accent-green);
+    border-color: var(--accent-green);
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo">IA</div>
+      <div class="profile-info">
+        <span id="profileName">—</span> &middot;
+        <span class="company" id="profileTarget">—</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="btn-download" onclick="downloadConversation()" title="Konuşmayı indir">
+        📥 İndir
+      </button>
+      <div class="status-badge status-connecting" id="statusBadge">
+        <span class="status-dot"></span>
+        <span id="statusText">Bağlanıyor</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ana içerik -->
+  <div class="content">
+    <!-- Transkript paneli -->
+    <div class="panel transcript-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="icon">🎙</span> Interviewer
+        </div>
+        <button class="panel-clear" onclick="clearTranscripts()">Temizle</button>
+      </div>
+      <div class="panel-body" id="transcriptBody">
+        <div class="placeholder">
+          <span class="icon">🎧</span>
+          <span>Mülakatçının sesi burada görünecek...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Cevap paneli -->
+    <div class="panel response-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <span class="icon">💬</span> Önerilen Cevap
+        </div>
+        <button class="panel-clear" onclick="clearResponses()">Temizle</button>
+      </div>
+      <div class="panel-body" id="responseBody">
+        <div class="placeholder">
+          <span class="icon">✨</span>
+          <span>AI cevabı burada görünecek...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manuel soru girişi -->
+  <div class="input-area">
+    <input
+      type="text"
+      id="manualInput"
+      placeholder="Soruyu manuel yazın ve Enter'a basın..."
+      autocomplete="off"
+    />
+    <button class="btn-send" id="btnSend" onclick="sendManualQuestion()">
+      Gönder
+    </button>
+  </div>
+</div>
+
+<script>
+  // ─── Değişkenler ────────────────────────────────────
+  let ws = null;
+  let reconnectTimer = null;
+  const WS_URL = `ws://${window.location.host}/ws/overlay`;
+  const RECONNECT_DELAY = 3000;
+
+  // Konuşma geçmişi (indirme için)
+  const conversationLog = [];
+
+  // DOM elementleri
+  const statusBadge = document.getElementById('statusBadge');
+  const statusText = document.getElementById('statusText');
+  const profileName = document.getElementById('profileName');
+  const profileTarget = document.getElementById('profileTarget');
+  const transcriptBody = document.getElementById('transcriptBody');
+  const responseBody = document.getElementById('responseBody');
+  const manualInput = document.getElementById('manualInput');
+  const btnSend = document.getElementById('btnSend');
+
+  // ─── WebSocket Bağlantısı ──────────────────────────
+  function connect() {
+    if (ws && ws.readyState === WebSocket.OPEN) return;
+
+    setStatus('connecting', 'Bağlanıyor');
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      console.log('WebSocket bağlandı');
+      setStatus('listening', 'Dinliyor');
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleMessage(data);
+      } catch (e) {
+        console.error('Mesaj parse hatası:', e);
+      }
+    };
+
+    ws.onclose = () => {
+      console.log('WebSocket kapandı');
+      setStatus('error', 'Bağlantı Kesildi');
+      scheduleReconnect();
+    };
+
+    ws.onerror = (err) => {
+      console.error('WebSocket hatası:', err);
+      setStatus('error', 'Hata');
+    };
+  }
+
+  function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      connect();
+    }, RECONNECT_DELAY);
+  }
+
+  // ─── Mesaj İşleme ─────────────────────────────────
+  function handleMessage(data) {
+    switch (data.type) {
+      case 'connected':
+        // Profil bilgilerini güncelle
+        if (data.profile) {
+          profileName.textContent = data.profile.name || '—';
+          profileTarget.textContent =
+            `${data.profile.target_position || ''} @ ${data.profile.target_company || ''}`;
+        }
+        setStatus('listening', 'Dinliyor');
+        break;
+
+      case 'status':
+        if (data.status === 'processing') {
+          setStatus('processing', data.message || 'İşleniyor');
+          showProcessingIndicator();
+        } else if (data.status === 'listening') {
+          setStatus('listening', data.message || 'Dinliyor');
+          hideProcessingIndicator();
+        }
+        break;
+
+      case 'transcript':
+        addTranscript(data.text);
+        break;
+
+      case 'response':
+        addResponse(data.text);
+        setStatus('listening', 'Dinliyor');
+        hideProcessingIndicator();
+        break;
+
+      case 'pong':
+        break;
+
+      default:
+        console.log('Bilinmeyen mesaj:', data);
+    }
+  }
+
+  // ─── Durum Güncelleme ─────────────────────────────
+  function setStatus(status, text) {
+    statusBadge.className = `status-badge status-${status}`;
+    statusText.textContent = text;
+  }
+
+  // ─── Transkript Ekleme ────────────────────────────
+  function addTranscript(text) {
+    // Placeholder'ı kaldır
+    const placeholder = transcriptBody.querySelector('.placeholder');
+    if (placeholder) placeholder.remove();
+
+    const timeStr = getTimeStr();
+
+    // Konuşma geçmişine ekle
+    conversationLog.push({
+      type: 'question',
+      time: timeStr,
+      text: text
+    });
+
+    const msg = document.createElement('div');
+    msg.className = 'message message-transcript';
+    msg.innerHTML = `
+      <div class="message-time">${timeStr}</div>
+      <div class="message-text">${escapeHtml(text)}</div>
+    `;
+
+    transcriptBody.appendChild(msg);
+    transcriptBody.scrollTop = transcriptBody.scrollHeight;
+  }
+
+  // ─── AI Cevap Ekleme ──────────────────────────────
+  function addResponse(text) {
+    // Placeholder'ı kaldır
+    const placeholder = responseBody.querySelector('.placeholder');
+    if (placeholder) placeholder.remove();
+
+    // Önceki "latest" sınıfını kaldır
+    const prevLatest = responseBody.querySelector('.message-response.latest');
+    if (prevLatest) prevLatest.classList.remove('latest');
+
+    // Processing indicator'ı kaldır
+    hideProcessingIndicator();
+
+    const timeStr = getTimeStr();
+
+    // Konuşma geçmişine ekle
+    conversationLog.push({
+      type: 'answer',
+      time: timeStr,
+      text: text
+    });
+
+    const msg = document.createElement('div');
+    msg.className = 'message message-response latest';
+
+    // Cevap metnini paragraf paragraf göster
+    const formattedText = escapeHtml(text)
+      .split('\n')
+      .filter(line => line.trim())
+      .join('<br>');
+
+    msg.innerHTML = `
+      <div class="message-time">${timeStr}</div>
+      <div class="message-text">${formattedText}</div>
+      <button class="copy-btn" onclick="copyText(this, '${encodeURIComponent(text)}')">
+        Kopyala
+      </button>
+      <div style="clear:both"></div>
+    `;
+
+    responseBody.appendChild(msg);
+    responseBody.scrollTop = responseBody.scrollHeight;
+  }
+
+  // ─── Processing Göstergesi ────────────────────────
+  function showProcessingIndicator() {
+    if (responseBody.querySelector('.processing-indicator')) return;
+
+    const indicator = document.createElement('div');
+    indicator.className = 'processing-indicator';
+    indicator.innerHTML = `
+      <div class="processing-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <span>Cevap hazırlanıyor...</span>
+    `;
+    responseBody.appendChild(indicator);
+    responseBody.scrollTop = responseBody.scrollHeight;
+  }
+
+  function hideProcessingIndicator() {
+    const indicator = responseBody.querySelector('.processing-indicator');
+    if (indicator) indicator.remove();
+  }
+
+  // ─── Manuel Soru Gönderme ─────────────────────────
+  function sendManualQuestion() {
+    const text = manualInput.value.trim();
+    if (!text) return;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      alert('Backend bağlantısı yok!');
+      return;
+    }
+
+    // Soruyu transkript paneline de ekle
+    addTranscript(`[Manuel] ${text}`);
+
+    // WebSocket ile gönder
+    ws.send(JSON.stringify({
+      type: 'manual_question',
+      text: text
+    }));
+
+    // İşleniyor göster
+    setStatus('processing', 'İşleniyor');
+    showProcessingIndicator();
+
+    // Input temizle
+    manualInput.value = '';
+  }
+
+  // Enter tuşu ile gönderme
+  manualInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendManualQuestion();
+    }
+  });
+
+  // ─── Temizleme ────────────────────────────────────
+  function clearTranscripts() {
+    transcriptBody.innerHTML = `
+      <div class="placeholder">
+        <span class="icon">🎧</span>
+        <span>Mülakatçının sesi burada görünecek...</span>
+      </div>
+    `;
+  }
+
+  function clearResponses() {
+    responseBody.innerHTML = `
+      <div class="placeholder">
+        <span class="icon">✨</span>
+        <span>AI cevabı burada görünecek...</span>
+      </div>
+    `;
+  }
+
+  // ─── Yardımcı Fonksiyonlar ────────────────────────
+  function getTimeStr() {
+    const now = new Date();
+    return now.toLocaleTimeString('tr-TR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function copyText(btn, encodedText) {
+    const text = decodeURIComponent(encodedText);
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✓ Kopyalandı';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Kopyala';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(() => {
+      // Fallback: select & copy
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '✓ Kopyalandı';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Kopyala';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  // ─── Konuşma İndirme ───────────────────────────────
+  function downloadConversation() {
+    if (conversationLog.length === 0) {
+      alert('Henüz konuşma kaydı yok!');
+      return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toISOString().slice(0, 10);
+    const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '-');
+    const company = profileTarget.textContent || 'interview';
+
+    let content = `INTERVIEW ASSISTANT - CONVERSATION LOG\n`;
+    content += `${'='.repeat(50)}\n`;
+    content += `Date: ${now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n`;
+    content += `Time: ${now.toLocaleTimeString('tr-TR')}\n`;
+    content += `Position: ${company}\n`;
+    content += `${'='.repeat(50)}\n\n`;
+
+    conversationLog.forEach((entry, index) => {
+      if (entry.type === 'question') {
+        content += `[${entry.time}] INTERVIEWER:\n`;
+        content += `${entry.text}\n\n`;
+      } else {
+        content += `[${entry.time}] SUGGESTED ANSWER:\n`;
+        content += `${entry.text}\n`;
+        content += `${'-'.repeat(40)}\n\n`;
+      }
+    });
+
+    content += `\n${'='.repeat(50)}\n`;
+    content += `Total Q&A pairs: ${Math.floor(conversationLog.length / 2)}\n`;
+    content += `Generated by Interview Assistant\n`;
+
+    // Dosya indirme
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `interview_${dateStr}_${timeStr}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ─── Başlat ───────────────────────────────────────
+  connect();
+</script>
+
+</body>
+</html>
